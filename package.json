@@ -1,0 +1,24 @@
+{
+  "name": "cpmdi-chat-service",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "tsc -P tsconfig.json  && node ./dist/index.js "
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/mongoose": "^5.11.97",
+    "@types/redis": "^4.0.11",
+    "@types/websocket": "^1.0.10",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "express": "^4.21.1",
+    "websocket": "^1.0.35",
+    "zod": "^3.23.8"
+  }
+}
