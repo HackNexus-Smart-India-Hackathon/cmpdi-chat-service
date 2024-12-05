@@ -5,7 +5,7 @@ export interface IMessage extends Document {
     chat_id: Types.ObjectId; 
     content: string; 
     created_at: Date; 
-    created_by: Types.ObjectId;
+    name: string;
 }
 
 // Define the schema
@@ -23,8 +23,8 @@ const messageSchema = new Schema<IMessage>({
         type: Date,
         default: Date.now, // Use the function reference
     },
-    created_by: {
-        type: Schema.Types.ObjectId,
+    name: {
+        type: String,
         ref: "User",
         required: true,
     },
