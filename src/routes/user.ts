@@ -2,15 +2,10 @@ import express, { Router } from "express";
 import User, { IUser } from "../models/user"; // Ensure your user model is correctly imported
 import Chat from "../models/chats"; // Ensure your chat model is correctly imported
 import { chatType } from "../models/chats"; // Assuming you have a constant for chat types
-import mongoose from "mongoose";
-import { getUserId, NOTFOUND } from "../helper/getUserId";
+import {NOTFOUND } from "../helper/getUserId";
 
 const user: Router = express.Router();
 
-type chatDetails  = {
-    id : mongoose.Types.ObjectId ,
-    members : [],
-}
 
 user.post(
   "/userDetails",
@@ -131,27 +126,18 @@ user.post(
   "/chats",
   async (req: express.Request, res: express.Response): Promise<any> => {
     try {
-      const { email } = req.body;
+        const { user_id } = req.body;
 
-      // Validate query parameters
-      if (!email) {
-        return res.status(400).json({ error: "Email  required" });
-      }
-      let userId = await getUserId(email);
-      if (userId == NOTFOUND) {
-        return res.status(400).json({ error: "user not found" });
-      }
-      if (!userId)
-        return res.status(404).json({ error: "Internal Server Error" });
-      let chat = await Chat.find({ chat_members: userId });
-      if (chat.length == 0) {
-        return res.status;
-      }
-      if (!chat) {
-        return res.status(404).json({ error: "Chat not found." });
-      }
+        // Validate query parameters
+        if (!user_id) {
+            return res.status(400).json({ error: "User_id required" });
+        }
+        let chat = await Chat.find({chat_members : user_id})
+        if (!chat) {
+            return res.status(404).json({ error: "Chat not found." });
+        }
 
-      return res.status(200).json({ chat });
+        return res.status(200).json({ chat });
     } catch (error) {
       console.error("Error in /chatId route:", error);
       return res.status(500).json({ error: "Internal Server Error" });
