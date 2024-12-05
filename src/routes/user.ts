@@ -12,145 +12,151 @@ type chatDetails  = {
     members : [],
 }
 
-user.get('/userDetails' , async (req: express.Request, res: express.Response):Promise<any> =>{
-    let {email}  = req.body;
-
-    if(!email)
-        return res.status(400).json({error : "please add email"})
-   try {
-    let user = await User.findOne({email})
-    if(!user)
-        return res.status(400).json({error : NOTFOUND})
-
-    return res.status(201).json({user})
-   } catch (error) {
-        console.error(error)
-        return res.status(404).json({error : "Internal Server Error"})
-    
-   }
-})
-
-user.post("/createUser", async (req: express.Request, res: express.Response):Promise<any> => {
+user.post(
+  "/userDetails",
+  async (req: express.Request, res: express.Response): Promise<any> => {
+    let { email } = req.body;
+    if (!email) return res.status(400).json({ error: "please add email" });
     try {
-        console.log(req.body)
-        const { name, email, role, projectId } = req.body;
+      let user = await User.findOne({ email });
+      if (!user) return res.status(400).json({ error: NOTFOUND });
 
-        // Check if the request body contains necessary data
-        if (!name || !email || !role || !projectId) {
-            return res.status(400).json({ error: "Missing required fields" });
-        }
-
-        // Check if user already exists
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ error: "User already exists" });
-        }
-
-        // Create new user
-        const userData: IUser = {
-            name,
-            email,
-            role,
-            projectId,
-        } as IUser;
-
-        const newUser = new User(userData);
-        const savedUser = await newUser.save();
-
-        // Add user to chat members or create a new chat
-        const updatedChat = await Chat.findOneAndUpdate(
-            { projectId },
-            { $push: { chat_members: savedUser._id } },
-            { new: true } // Returns the updated document
-        );
-        // let chat_details : chatDetails;
-        if (!updatedChat) {
-            // If no chat exists, create a new one
-            const newChat = new Chat({
-                chatType: chatType.GROUP,
-                createdAt: new Date(),
-                projectId,
-                chat_members: [savedUser._id],
-            });
-            await newChat.save();
-          
-        }
-        return res.status(201).json({ message: "User created successfully", user: savedUser    });
+      return res.status(201).json({ user });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: "Internal Server Error" });
+      console.error(error);
+      return res.status(404).json({ error: "Internal Server Error" });
     }
-});
+  }
+);
 
-
-user.post("/privateChat", async (req: express.Request, res: express.Response) :Promise<any>=> {
+user.post(
+  "/createUser",
+  async (req: express.Request, res: express.Response): Promise<any> => {
     try {
-        const { name, email, role, projectId, to } = req.body;
+      console.log(req.body);
+      const { name, email, role, projectId } = req.body;
 
-        // Check if the request body contains necessary data
-        if (!name || !email || !role || !projectId || !to) {
-            return res.status(400).json({ error: "Missing required fields" });
-        }
+      // Check if the request body contains necessary data
+      if (!name || !email || !role || !projectId) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
 
-        // Check if user already exists
-        const existingUser = await User.findOne({ email });
-        if (!existingUser) {
-            return res.status(400).json({ error: "Sender not found" });
-        }
+      // Check if user already exists
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ error: "User already exists" });
+      }
 
-        // Check if recipient user exists
-        const recipientUser = await User.findOne({ email: to });
-        if (!recipientUser) {
-            return res.status(404).json({ error: "Recipient user not found" });
-        }
+      // Create new user
+      const userData: IUser = {
+        name,
+        email,
+        role,
+        projectId,
+      } as IUser;
 
-       
+      const newUser = new User(userData);
+      const savedUser = await newUser.save();
+
+      // Add user to chat members or create a new chat
+      const updatedChat = await Chat.findOneAndUpdate(
+        { projectId },
+        { $push: { chat_members: savedUser._id } },
+        { new: true } // Returns the updated document
+      );
+      // let chat_details : chatDetails;
+      if (!updatedChat) {
+        // If no chat exists, create a new one
         const newChat = new Chat({
-            chatType:chatType.PRIVATE,
-            createdAt: new Date(),
-            projectId,
-            chat_members: [existingUser._id, recipientUser._id],
+          chatType: chatType.GROUP,
+          createdAt: new Date(),
+          projectId,
+          chat_members: [savedUser._id],
         });
-
-        const savedChat = await newChat.save();
-
-        return res.status(201).json({
-            message: "private chat established",
-        });
+        await newChat.save();
+      }
+      return res
+        .status(201)
+        .json({ message: "User created successfully", user: savedUser });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: "Internal Server Error" });
+      console.error(error);
+      return res.status(500).json({ error: "Internal Server Error" });
     }
-});
+  }
+);
 
-
-user.get("/chats", async (req: express.Request, res: express.Response):Promise<any> => {
+user.post(
+  "/privateChat",
+  async (req: express.Request, res: express.Response): Promise<any> => {
     try {
-        const { email} = req.body;
+      const { name, email, role, projectId, to } = req.body;
 
-        // Validate query parameters
-        if (!email) {
-            return res.status(400).json({ error: "Email  required" });
-        }
-        let userId = await getUserId(email)
-        if(userId == NOTFOUND){
-            return res.status(400).json({error : "user not found"})
-        }
-        if(!userId)
-            return res.status(404).json({error : "Internal Server Error"})
-        let chat = await Chat.find({chat_members : userId})
-        if (chat.length  == 0) {
-            return res.status
-        }
-        if (!chat) {
-            return res.status(404).json({ error: "Chat not found." });
-        }
+      // Check if the request body contains necessary data
+      if (!name || !email || !role || !projectId || !to) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
 
-        return res.status(200).json({ chat });
+      // Check if user already exists
+      const existingUser = await User.findOne({ email });
+      if (!existingUser) {
+        return res.status(400).json({ error: "Sender not found" });
+      }
+
+      // Check if recipient user exists
+      const recipientUser = await User.findOne({ email: to });
+      if (!recipientUser) {
+        return res.status(404).json({ error: "Recipient user not found" });
+      }
+
+      const newChat = new Chat({
+        chatType: chatType.PRIVATE,
+        createdAt: new Date(),
+        projectId,
+        chat_members: [existingUser._id, recipientUser._id],
+      });
+
+      const savedChat = await newChat.save();
+
+      return res.status(201).json({
+        message: "private chat established",
+      });
     } catch (error) {
-        console.error("Error in /chatId route:", error);
-        return res.status(500).json({ error: "Internal Server Error" });
+      console.error(error);
+      return res.status(500).json({ error: "Internal Server Error" });
     }
-});
+  }
+);
+
+user.post(
+  "/chats",
+  async (req: express.Request, res: express.Response): Promise<any> => {
+    try {
+      const { email } = req.body;
+
+      // Validate query parameters
+      if (!email) {
+        return res.status(400).json({ error: "Email  required" });
+      }
+      let userId = await getUserId(email);
+      if (userId == NOTFOUND) {
+        return res.status(400).json({ error: "user not found" });
+      }
+      if (!userId)
+        return res.status(404).json({ error: "Internal Server Error" });
+      let chat = await Chat.find({ chat_members: userId });
+      if (chat.length == 0) {
+        return res.status;
+      }
+      if (!chat) {
+        return res.status(404).json({ error: "Chat not found." });
+      }
+
+      return res.status(200).json({ chat });
+    } catch (error) {
+      console.error("Error in /chatId route:", error);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
 
 export default user;
