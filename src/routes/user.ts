@@ -7,9 +7,9 @@ import {NOTFOUND } from "../helper/getUserId";
 const user: Router = express.Router();
 
 
-user.get('/userDetails' , async (req: express.Request, res: express.Response):Promise<any> =>{
+user.post('/userDetails' , async (req: express.Request, res: express.Response):Promise<any> =>{
     let {email}  = req.body;
-
+    console.log(email)
     if(!email)
         return res.status(400).json({error : "please add email"})
    try {
@@ -119,7 +119,7 @@ user.post("/privateChat", async (req: express.Request, res: express.Response) :P
 });
 
 
-user.get("/chats", async (req: express.Request, res: express.Response):Promise<any> => {
+user.post("/chats", async (req: express.Request, res: express.Response):Promise<any> => {
     try {
         const { user_id } = req.body;
 
