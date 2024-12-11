@@ -2,8 +2,7 @@ import express, { Router } from "express";
 import User, { IUser } from "../models/user"; // Ensure your user model is correctly imported
 import Chat from "../models/chats"; // Ensure your chat model is correctly imported
 import { chatType } from "../models/chats"; // Assuming you have a constant for chat types
-import {NOTFOUND } from "../helper/getUserId";
-
+import { NOTFOUND } from "../helper/getUserId";
 const user: Router = express.Router();
 
 
@@ -29,10 +28,10 @@ user.post(
   async (req: express.Request, res: express.Response): Promise<any> => {
     try {
       console.log(req.body);
-      const { name, email, role, projectId } = req.body;
+      const { username, email, role, projectId } = req.body;
 
       // Check if the request body contains necessary data
-      if (!name || !email || !role || !projectId) {
+      if (!username || !email || !role || !projectId) {
         return res.status(400).json({ error: "Missing required fields" });
       }
 
@@ -41,10 +40,9 @@ user.post(
       if (existingUser) {
         return res.status(400).json({ error: "User already exists" });
       }
-
       // Create new user
       const userData: IUser = {
-        name,
+        name: username,
         email,
         role,
         projectId,
@@ -52,27 +50,30 @@ user.post(
 
       const newUser = new User(userData);
       const savedUser = await newUser.save();
-
       // Add user to chat members or create a new chat
       const updatedChat = await Chat.findOneAndUpdate(
         { projectId },
         { $push: { chat_members: savedUser._id } },
-        { new: true } // Returns the updated document
+        { new: true ,upsert : true} // Returns the updated document
       );
-      // let chat_details : chatDetails;
+      
       if (!updatedChat) {
-        // If no chat exists, create a new one
-        const newChat = new Chat({
-          chatType: chatType.GROUP,
-          createdAt: new Date(),
-          projectId,
-          chat_members: [savedUser._id],
-        });
-        await newChat.save();
+        // Check again if the chat exists to avoid duplicates
+        const existingChat = await Chat.findOne({ projectId });
+        if (!existingChat) {
+          const newChat = new Chat({
+            chatType: chatType.GROUP,
+            createdAt: new Date(),
+            projectId,
+            chat_members: [savedUser._id],
+          });
+          await newChat.save();
+      
+          console.log("New chat created for projectId:", projectId);
+        } else {
+          console.log("Chat already created during another operation.");
+        }
       }
-      return res
-        .status(201)
-        .json({ message: "User created successfully", user: savedUser });
     } catch (error) {
       console.error(error);
       return res.status(500).json({ error: "Internal Server Error" });
@@ -126,23 +127,70 @@ user.post(
   "/chats",
   async (req: express.Request, res: express.Response): Promise<any> => {
     try {
-        const { user_id } = req.body;
+      const { user_id } = req.body;
 
-        // Validate query parameters
-        if (!user_id) {
-            return res.status(400).json({ error: "User_id required" });
-        }
-        let chat = await Chat.find({chat_members : user_id})
-        if (!chat) {
-            return res.status(404).json({ error: "Chat not found." });
-        }
+      // Validate query parameters
+      if (!user_id) {
+        return res.status(400).json({ error: "User_id required" });
+      }
+      let chat = await Chat.find({ chat_members: user_id })
+      if (!chat) {
+        return res.status(404).json({ error: "Chat not found." });
+      }
 
-        return res.status(200).json({ chat });
+      return res.status(200).json({ chat });
     } catch (error) {
       console.error("Error in /chatId route:", error);
       return res.status(500).json({ error: "Internal Server Error" });
     }
   }
 );
+
+user.post('/addAdmin', async (req: express.Request, res: express.Response): Promise<any> => {
+
+  const { email, username, role, projectId } = req.body
+  if (!username || !email || !role || !projectId) {
+    return res.status(500).json({ error: "Missing required fields" })
+  }
+  try {
+    const existingUser = await User.findOne({ email });
+    if (!existingUser) {
+      return res.status(500).json({ error: "Admin not found" })
+    }
+    const updatedChat = await Chat.findOneAndUpdate(
+      { projectId },
+      { $push: { chat_members: existingUser._id } },
+      { new: true ,upsert: true} // Returns the updated document
+    );
+    
+    if (!updatedChat) {
+      // Check again if the chat exists to avoid duplicates
+      const existingChat = await Chat.findOne({ projectId });
+      if (!existingChat) {
+        const newChat = new Chat({
+          chatType: chatType.GROUP,
+          createdAt: new Date(),
+          projectId,
+          chat_members: [existingUser._id],
+        });
+        await newChat.save();
+    
+        return res
+          .status(201)
+          .json({ message: "New admin chat created", user: existingUser });
+      } else {
+        console.log("Chat already created during another operation.");
+      }
+    }
+    
+    return res
+      .status(201)
+      .json({ message: "Admin added to chat", user: existingUser });
+    
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+})
 
 export default user;

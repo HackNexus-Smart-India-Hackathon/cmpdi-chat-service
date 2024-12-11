@@ -33,7 +33,6 @@ const userSchema = new Schema<IUser>({
     },
     projectId: {
         type: String,
-        required: true,
         trim: true,
     },
 });
