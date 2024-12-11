@@ -4,25 +4,14 @@ import * as mongoose from "mongoose"
 import cors from "cors"
 import user from "./routes/user";
 import message from "./routes/message";
+import { MONGO_URI } from "./config";
+
 
 const app : Express = express()
 
 app.use(cors())
 
-// let redisClient = createClient()
-// redisClient.connect()
-// .then(()=>{
-//     console.log("connected to redis client")
-// })
-// .catch(()=>{
-//     console.log("not able to connect")
-// })
-
-// async function publishNotificatiom(channel:RedisCommandArgument, notifciation:any) {
-//     await redisClient.publish(channel , )
-// }
-
-mongoose.connect("mongodb+srv://kadevelopment2003:krishna@cluster0.miduc.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+mongoose.connect(MONGO_URI  )
 .then(fullfilled =>{
     console.log("Connected to database")
 })
