@@ -39,20 +39,23 @@ message.post("/addMessage", async (req: Request, res: Response) :Promise<any>=> 
     }
 });
 
-message.get('/getPrevChat' , async (req : express.Request , res : express.Response) :Promise<any>=>{
-    const {chat_id} = req.body;
-    if(!chat_id)
-        res.status(400).json({ error: "chat_id  required." });
-    try{
-        const messages = await Message.find({chat_id})
-        if(messages) {
-            return res.status(201).json({message : "message content"  ,data : messages})
-        }
+message.post(
+  "/getPrevChat",
+  async (req: express.Request, res: express.Response): Promise<any> => {
+    const { chat_id } = req.body;
+    if (!chat_id) res.status(400).json({ error: "chat_id  required." });
+    try {
+      const messages = await Message.find({ chat_id });
+      if (messages) {
+        return res
+          .status(201)
+          .json({ message: "message content", data: messages });
+      }
+    } catch (error) {
+      console.error("Error creating message:", error);
+      return res.status(500).json({ error: "Internal Server Error" });
     }
-    catch(error){
-        console.error("Error creating message:", error);
-        return res.status(500).json({ error: "Internal Server Error" });
-    }
-})
+  }
+);
 
 export default message;
